@@ -23,3 +23,5 @@ will be addressing the gap that currently exists between datacenter
 hypervisors, hard partitioning hypervisors, and select industrial
 applications.  Extending the scope of this open source embedded
 hypervisor relies on the involvement of community developers like you!
+
+acrn_test
