@@ -160,8 +160,12 @@ static void init_vm_bootargs_info(struct acrn_vm *vm, const struct multiboot_inf
 		vm->sw.bootargs_info.src_addr = bootargs;
 		vm->sw.bootargs_info.size = strnlen_s(bootargs, MAX_BOOTARGS_SIZE);
 	} else {
+		if (strnlen_s(kernel_cmdline, MAX_BOOTARGS_SIZE) != 0) {
+			vm->sw.bootargs_info.src_addr = kernel_cmdline;
+			vm->sw.bootargs_info.size = strnlen_s(kernel_cmdline, MAX_BOOTARGS_SIZE);
+			pr_acrnlog("bootarg from grub %s\n", kernel_cmdline);
 		/* vm_config->load_order == SOS_VM */
-		if ((mbi->mi_flags & MULTIBOOT_INFO_HAS_CMDLINE) != 0U) {
+		} else if ((mbi->mi_flags & MULTIBOOT_INFO_HAS_CMDLINE) != 0U) {
 			/*
 			 * If there is cmdline from mbi->mi_cmdline, merge it with
 			 * vm_config->os_config.bootargs
@@ -199,8 +203,13 @@ static uint32_t get_mod_idx_by_tag(const struct multiboot_module *mods, uint32_t
 		if ((mm_str_len >= tag_len) && (strncmp(mm_string, tag, tag_len) == 0)
 				&& ((*(mm_string + tag_len) == 0x0d)
 				|| (*(mm_string + tag_len) == 0x0a)
-				|| (*(mm_string + tag_len) == 0))){
+				|| (*(mm_string + tag_len) == 0)
+				|| (*(mm_string + tag_len) == ' '))){
 			ret = i;
+			if (*(mm_string + tag_len) == ' ')
+				strncpy_s(kernel_cmdline, MAX_BOOTARGS_SIZE,
+						mm_string + tag_len + 1,
+						MAX_BOOTARGS_SIZE - tag_len - 1);
 			break;
 		}
 	}
