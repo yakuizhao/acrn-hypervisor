@@ -21,6 +21,8 @@ void vcpu_thread(struct sched_object *obj)
 	uint32_t basic_exit_reason = 0U;
 	int32_t ret = 0;
 
+	pr_err("VCPU thread is executed on VCPU %d, PCPU %d\n",
+			vcpu->vcpu_id, vcpu->pcpu_id);
 	do {
 		/* If vcpu is not launched, we need to do init_vmcs first */
 		if (!vcpu->launched) {
@@ -84,6 +86,7 @@ void default_idle(__unused struct sched_object *obj)
 {
 	uint16_t pcpu_id = get_pcpu_id();
 
+	pr_err("PCPU %d is in idle loop\n", pcpu_id);
 	while (1) {
 		if (need_reschedule(pcpu_id)) {
 			schedule();

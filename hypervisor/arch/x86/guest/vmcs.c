@@ -546,7 +546,7 @@ void init_vmcs(struct acrn_vcpu *vcpu)
 	void **vmcs_ptr = &get_cpu_var(vmcs_run);
 
 	/* Log message */
-	pr_dbg("Initializing VMCS");
+	pr_err("Initializing VMCS on VCPU %d[vm%d]\n", vcpu->vcpu_id, vcpu->vm->vm_id);
 
 	/* Obtain the VM Rev ID from HW and populate VMCS page with it */
 	vmx_rev_id = msr_read(MSR_IA32_VMX_BASIC);

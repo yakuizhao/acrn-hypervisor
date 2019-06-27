@@ -1187,9 +1187,9 @@ vlapic_process_init_sipi(struct acrn_vcpu* target_vcpu, uint32_t mode,
 	if (mode == APIC_DELMODE_INIT) {
 		if ((icr_low & APIC_LEVEL_MASK) != APIC_LEVEL_DEASSERT) {
 
-			dev_dbg(ACRN_DBG_LAPIC,
+			dev_dbg(3,
 				"Sending INIT from VCPU %hu to %hu",
-				target_vcpu->vcpu_id, vcpu_id);
+					vcpu_id, target_vcpu->vcpu_id);
 
 			/* put target vcpu to INIT state and wait for SIPI */
 			pause_vcpu(target_vcpu, VCPU_PAUSED);
@@ -1205,9 +1205,9 @@ vlapic_process_init_sipi(struct acrn_vcpu* target_vcpu, uint32_t mode,
 		if ((target_vcpu->state == VCPU_INIT) &&
 			(target_vcpu->arch.nr_sipi != 0U)) {
 
-			dev_dbg(ACRN_DBG_LAPIC,
+			dev_dbg(3,
 				"Sending SIPI from VCPU %hu to %hu with vector %u",
-				target_vcpu->vcpu_id, vcpu_id,
+				vcpu_id, target_vcpu->vcpu_id,
 				(icr_low & APIC_VECTOR_MASK));
 
 			target_vcpu->arch.nr_sipi--;
@@ -1259,7 +1259,7 @@ static void vlapic_icrlo_write_handler(struct acrn_vlapic *vlapic)
 	} else if (((shorthand == APIC_DEST_SELF) || (shorthand == APIC_DEST_ALLISELF))
 			&& ((mode == APIC_DELMODE_NMI) || (mode == APIC_DELMODE_INIT)
 			|| (mode == APIC_DELMODE_STARTUP))) {
-			dev_dbg(ACRN_DBG_LAPIC, "Invalid ICR value");
+			pr_err("Invalid ICR value %llx on VCPU %d", icr_low, vlapic->vcpu->vcpu_id);
 	} else {
 
 		dev_dbg(ACRN_DBG_LAPIC,
@@ -1302,8 +1302,14 @@ static void vlapic_icrlo_write_handler(struct acrn_vlapic *vlapic)
 					dev_dbg(ACRN_DBG_LAPIC,
 						"vlapic send ipi nmi to vcpu_id %hu", vcpu_id);
 				} else if (mode == APIC_DELMODE_INIT) {
+					pr_err("ICR Init is triggered on VCPU %d. The target VCPU is %d, %d, icr_low %x, %x\n",
+								vlapic->vcpu->vcpu_id, target_vcpu->vcpu_id, target_vcpu->pcpu_id,
+								icr_low, icr_high);
 					vlapic_process_init_sipi(target_vcpu, mode, icr_low, vcpu_id);
 				} else if (mode == APIC_DELMODE_STARTUP) {
+					pr_err("ICR Startup is triggered on VCPU %d. The target VCPU is %d, %d, icr_low %x, %x\n",
+								vlapic->vcpu->vcpu_id, target_vcpu->vcpu_id, target_vcpu->pcpu_id,
+								icr_low, icr_high);
 					vlapic_process_init_sipi(target_vcpu, mode, icr_low, vcpu_id);
 				} else if (mode == APIC_DELMODE_SMI) {
 					pr_info("vlapic: SMI IPI do not support\n");
