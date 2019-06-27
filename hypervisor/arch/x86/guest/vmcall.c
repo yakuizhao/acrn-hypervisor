@@ -222,6 +222,11 @@ static int32_t dispatch_hypercall(struct acrn_vcpu *vcpu)
 		}
 		break;
 
+	case 0x80000005UL:
+		pr_err("Debug hypercall is called. value is %llx on vcpu %d, pcpu %d\n",
+			param1, vcpu->vcpu_id, vcpu->pcpu_id);
+
+		break;
 	default:
 		ret = hcall_debug(vm, param1, param2, hypcall_id);
 		break;

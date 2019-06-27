@@ -46,6 +46,21 @@ char *cmdline = NULL;
 extern const uint64_t guest_entry;
 static UINT64 hv_hpa;
 
+static inline long efi_hypercall(unsigned long param1)
+{
+        /* x86-64 System V ABI register usage */
+        register signed long    result asm("rax");
+        register unsigned long  r8 asm("r8") = 0x80000005UL;
+ 
+        /* Execute vmcall */
+        asm volatile("vmcall\n"
+                        : "=r"(result)
+                        : "D"(param1), "r"(r8));
+ 
+        /* Return result to caller */
+        return result;
+}
+
 static void
 enable_disable_all_ap(BOOLEAN enable)
 {
@@ -79,10 +94,17 @@ enable_disable_all_ap(BOOLEAN enable)
 		if (i == bsp) {
 			continue;
 		}
+		
+		if (enable)
+			efi_hypercall((1UL << 16) | i);
 
 		err = uefi_call_wrapper(mp->EnableDisableAP, 4, mp, i, enable, NULL);
 		if (err != EFI_SUCCESS) {
 			Print(L"failed to %s AP%d: %r\n", enable ? "enable" : "disable", i, err);
+		}
+		if (enable) {
+			efi_hypercall((2UL << 16) | i);
+			efi_hypercall(err);
 		}
 	}
 }
@@ -257,6 +279,7 @@ switch_to_guest_mode(EFI_HANDLE image, EFI_PHYSICAL_ADDRESS hv_hpa)
 	}
 	(void)memset((void *)addr, 0x0, EFI_BOOT_MEM_SIZE);
 
+	Print(L"APIC mode %llx, hv_hpa %llx\n", msr_read(0x1B), hv_hpa); 
 	mmap = MBOOT_MMAP_PTR(addr);
 	mbi = MBOOT_INFO_PTR(addr);
 	efi_ctx = BOOT_CTX_PTR(addr);
