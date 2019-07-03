@@ -1,102 +1,81 @@
-Project ACRN Embedded Hypervisor
-################################
+Prepare ChromeOS image:
+#######################
+
+Prepare the build environment and download the source code by following the guide: https://www.chromium.org/chromium-os/quick-start-guide "Prerequisites" and "Get the Source" sections.
+Go to the ChromeOS source folder, for exampe: chrome, and then run::
+
+# cros_sdk
+
+Then cd to the overlays folder and then apply the patch: `overlay.patch`_ ::
+
+# cd ~/trunk/src/overlays
+# git apply overlay.patch
+
+Go to script folder and run build command, which may take some time::
+
+# cd ~/trunk/src/scripts
+# ./build_packages --board=amd64-generic
+# ./build_image --board=amd64-generic
+
+Exit from ChromeOS build environment::
+
+# exit
+
+Now copy this image onto a usb drive.  Insert the usb stick you’d like to use and run::
+
+# cros_sdk -- cros flash --board=amd64-generic usb://
+
+This will prompt you for which usb device you’d like to use. (Note that auto-mounting of USB devices should be turned off as it may corrupt the disk image while it's being written.)
+
+Mount the EFI partition of ChromeOS, please find the disk node of your USB driver, for example: sdb. And replace [chrome source] with your source patch, for example: ~/chrome/ ::
+
+# sudo mount /dev/sdb12 /mnt
+# cd /mnt/efi/boot
+# sudo mkdir x86_64-efi
+# sudo cp [chrome source]/chroot/lib/grub/x86_64-efi/multiboot.mod x86_64-efi/
+
+Integrate Acrn Hypervisor:
+##########################
+
+Copy the pre-built `acrn.32.out`_ into the /mnt/efi/boot folder::
+
+# sudo cp acrn.32.out /mnt/efi/boot/
+
+Then edit the grub.cfg in /mnt/efi/boot/ folder, and insert below menuentry::
+
+  menuentry "acrn" {
+     insmod multiboot     multiboot --quirk-modules-after-kernel /EFI/boot/acrn.32.out
+     module /syslinux/vmlinuz.A Linux_bzImage init=/sbin/init boot=local rootwait ro noresume noswap loglevel=7 noinitrd console=ttyS0  i915.modeset=1 cros_efi cros_debug  root=PARTUUID=073875AA-4F53-B64F-BB31-B6CB4E3C0B32
+   }
+
+The kernel parameter after "Linux_bzImage" should be copied from the ChromeOS kernel commandline in "local image A", like below::
+
+  init=/sbin/init boot=local rootwait ro noresume noswap loglevel=7 noinitrd console=ttyS0  i915.modeset=1 cros_efi cros_debug  root=PARTUUID=073875AA-4F53-B64F-BB31-B6CB4E3C0B32
+
+Umount the USB driver::
+
+# sudo umount /mnt
+
+Now the USB thumb driver with Acrn Hypervisor + ChromeOS ServiceOS is ready. You can plug it onto your KBL-NUC machine and select boot from USB EFI mode
+
+Build the Acrn Hypervisor from Source:
+######################################
+
+Please prepare the acrn build environment by following the guide:
+https://projectacrn.github.io/latest/getting-started/building-from-source.html#introduction
+
+And then clone this repo and switch to the test branch. After that, go to the acrn hypervisor source folder and build the code::
+
+# cd hypervisor
+# make defconfig BOARD=nuc7i7bnh
+# make menuconfig
+
+Then choose "Hybrid VMs" in "ACRN Scenario" option and save::
+
+# make
+
+After build, you will get the acrn.32.out binary. 
 
 
-The open source project ACRN defines a device hypervisor reference stack
-and an architecture for running multiple software subsystems, managed
-securely, on a consolidated system by means of a virtual machine
-manager. It also defines a reference framework implementation for
-virtual device emulation, called the "ACRN Device Model".
-
-The ACRN Hypervisor is a Type 1 reference hypervisor stack, running
-directly on the bare-metal hardware, and is suitable for a variety of
-IoT and embedded device solutions. The ACRN hypervisor addresses the
-gap that currently exists between datacenter hypervisors, and hard
-partitioning hypervisors. The ACRN hypervisor architecture partitions
-the system into different functional domains, with carefully selected
-guest OS sharing optimizations for IoT and embedded devices.
-
-.. start_include_here
-
-Community Support
-*****************
-
-The Project ACRN Developer Community includes developers from member
-organizations and the general community all joining in the development of
-software within the project. Members contribute and discuss ideas,
-submit bugs and bug fixes. They also help those in need
-through the community's forums such as mailing lists and IRC channels. Anyone
-can join the developer community and the community is always willing to help
-its members and the User Community to get the most out of Project ACRN.
-
-Welcome to the project ARCN community!
-
-We're now holding weekly Technical Community Meetings and encourage you
-to call in and learn more about the project. Meeting information is on
-the `TCM Meeting page`_ in our `ACRN wiki <https://wiki.projectacrn.org/>`_.
-
-.. _TCM Meeting page:
-   https://github.com/projectacrn/acrn-hypervisor/wiki/ACRN-Committee-and-Working-Group-Meetings#technical-community-meetings
-
-Resources
-*********
-
-Here's a quick summary of resources to find your way around the Project
-ACRN support systems:
-
-* **Project ACRN Website**: The https://projectacrn.org website is the
-  central source of information about the project. On this site, you'll
-  find background and current information about the project as well as
-  relevant links to project material.  For a quick start, refer to the
-  `Introduction`_ and `Getting Started Guide`_.
-
-* **Source Code in GitHub**: Project ACRN source code is maintained on a
-  public GitHub repository at https://github.com/projectacrn/acrn-hypervisor.
-  You'll find information about getting access to the repository and how to
-  contribute to the project in this `Contribution Guide`_ document.
-
-* **Documentation**: Project technical documentation is developed
-  along with the project's code, and can be found at
-  https://projectacrn.github.io.  Additional documentation is maintained in
-  the `Project ACRN GitHub wiki`_.
-
-* **Issue Reporting and Tracking**: Requirements and Issue tracking is done in
-  the Github issues system: https://github.com/projectacrn/acrn-hypervisor/issues.
-  You can browse through the reported issues and submit issues of your own.
-
-* **Reporting a Potential Security Vulnerability**: If you have discovered potential
-  security vulnerability in ACRN, please send an e-mail to secure@intel.com. For issues
-  related to Intel Products, please visit https://security-center.intel.com.
-
-  It is important to include the following details:
-
-  - The projects and versions affected
-  - Detailed description of the vulnerability
-  - Information on known exploits
-
-  Vulnerability information is extremely sensitive. Please encrypt all security vulnerability
-  reports using our `PGP key`_.
-
-  A member of the Intel Product Security Team will review your e-mail and contact you to
-  to collaborate on resolving the issue. For more information on how Intel works to resolve
-  security issues, see: `vulnerability handling guidelines`_.
-
-* **Mailing List**: The `Project ACRN Development mailing list`_ is perhaps the most convenient
-  way to track developer discussions and to ask your own support questions to
-  the project ACRN community.  There are also specific `ACRN mailing list
-  subgroups`_ for builds, users, and Technical
-  Steering Committee notes, for example.
-  You can read through the message archives to follow
-  past posts and discussions, a good thing to do to discover more about the
-  project.
-
-
-.. _Introduction: https://projectacrn.github.io/latest/introduction/
-.. _Getting Started Guide: https://projectacrn.github.io/latest/getting_started/
-.. _Contribution Guide: https://projectacrn.github.io/latest/contribute.html
-.. _Project ACRN GitHub wiki: https://github.com/projectacrn/acrn-hypervisor/wiki
-.. _PGP Key: https://www.intel.com/content/www/us/en/security-center/pgp-public-key.html
-.. _vulnerability handling guidelines:
-   https://www.intel.com/content/www/us/en/security-center/vulnerability-handling-guidelines.html
-.. _Project ACRN Development mailing list: https://lists.projectacrn.org/g/acrn-dev
-.. _ACRN mailing list subgroups: https://lists.projectacrn.org/g/main/subgroups
+.. _overlay.patch: https://github.com/minhe1/acrn-hypervisor/blob/test/overlay.patch
+.. _acrn.32.out: https://github.com/minhe1/acrn-hypervisor/blob/test/acrn.32.out
