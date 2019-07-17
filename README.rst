@@ -44,7 +44,8 @@ Copy the pre-built `acrn.32.out`_ into the /mnt/efi/boot folder::
 Then edit the grub.cfg in /mnt/efi/boot/ folder, and insert below menuentry::
 
   menuentry "acrn" {
-     insmod multiboot     multiboot --quirk-modules-after-kernel /EFI/boot/acrn.32.out
+     insmod multiboot
+     multiboot --quirk-modules-after-kernel /EFI/boot/acrn.32.out
      module /syslinux/vmlinuz.A Linux_bzImage init=/sbin/init boot=local rootwait ro noresume noswap loglevel=7 noinitrd console=ttyS0  i915.modeset=1 cros_efi cros_debug  root=PARTUUID=073875AA-4F53-B64F-BB31-B6CB4E3C0B32
    }
 
