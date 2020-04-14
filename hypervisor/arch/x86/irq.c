@@ -19,6 +19,7 @@
 #include <dump.h>
 #include <logmsg.h>
 #include <vmx.h>
+#include <msr.h>
 
 static spinlock_t exception_spinlock = { .head = 0U, .tail = 0U, };
 static spinlock_t irq_alloc_spinlock = { .head = 0U, .tail = 0U, };
@@ -372,6 +373,41 @@ void dispatch_exception(struct intr_excp_ctx *ctx)
 
 	/* Obtain lock to ensure exception dump doesn't get corrupted */
 	spinlock_obtain(&exception_spinlock);
+
+	if (ctx->vector == IDT_MC) {
+		uint32_t i, mce_bank;
+		uint64_t mce_cap = cpu_msr_read(MSR_IA32_MCG_CAP);
+		uint64_t mcb_status;
+	
+		pr_acrnlog("MCE cap/status on CPU %d is %llx, %llx\n",
+				pcpu_id, mce_cap, cpu_msr_read(MSR_IA32_MCG_STATUS));
+		mce_bank = mce_cap & (0xFF);
+		for (i = 0; i < mce_bank; i++) {
+			mcb_status = cpu_msr_read(MSR_IA32_MC0_STATUS + 4 * i);
+
+			if (mcb_status & (1ULL	<< 63)) {
+				pr_acrnlog("MCE bank %d,  status %llx, ctl %llx\n",
+						i,
+						mcb_status,
+						cpu_msr_read(MSR_IA32_MC0_CTL + 4 * i));
+
+				if (mcb_status & (1ULL << 58)) {
+					pr_acrnlog("MCE Bank Addr %llx\n",
+						cpu_msr_read(MSR_IA32_MC0_ADDR + i));
+				}
+				if (mcb_status & (1ULL << 59)) {
+					pr_acrnlog("MCE  Band Misc %llx\n",
+						cpu_msr_read(MSR_IA32_MC0_MISC + i));
+				}
+				if (mce_cap & (1ULL << 10)) {
+					pr_acrnlog("MCE Bank ctrl2 %llx\n",
+						cpu_msr_read(MSR_IA32_MC0_CTL2 + i));
+				}
+
+				cpu_msr_write(MSR_IA32_MC0_STATUS + 4 * i, 0);
+			}
+		}	
+	}
 
 	/* Dump exception context */
 	dump_exception(ctx, pcpu_id);
