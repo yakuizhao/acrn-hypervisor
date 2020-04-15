@@ -47,8 +47,10 @@ static const uint32_t emulated_guest_msrs[NUM_GUEST_MSRS] = {
 	MSR_IA32_PERF_CTL,
 	MSR_IA32_FEATURE_CONTROL,
 
+	/*
 	MSR_IA32_MCG_CAP,
 	MSR_IA32_MCG_STATUS,
+	*/
 	MSR_IA32_MISC_ENABLE,
 
 	/* Don't support SGX Launch Control yet, read only */
@@ -206,10 +208,12 @@ static const uint32_t unsupported_msrs[NUM_UNSUPPORTED_MSRS] = {
 	MSR_IA32_DS_AREA,
 
 	/* Machine Check Exception: CPUID.01H.EDX[5] (X86_FEATURE_MCE) */
+	/*
 	MSR_IA32_MCG_CAP,
 	MSR_IA32_MCG_STATUS,
 	MSR_IA32_MCG_CTL,
 	MSR_IA32_MCG_EXT_CTL,
+	*/
 	/* MSR 0x280 ... 0x29F, not in this array */
 	/* MSR 0x400 ... 0x473, not in this array */
 
