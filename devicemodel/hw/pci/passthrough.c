@@ -509,6 +509,8 @@ passthru_init(struct vmctx *ctx, struct pci_vdev *dev, char *opts)
 		/* initialize the EPT mapping for passthrough GPU gsm region */
 		vm_map_ptdev_mmio(ctx, 0, 2, 0, GPU_GSM_GPA, GPU_GSM_SIZE, gsm_start_hpa);
 
+		vm_map_ptdev_mmio(ctx, 0, 2, 0, 0x8d000000, 0x800000, 0x8d000000);
+
 		/* get opregion hpa */
 		opregion_phys = read_config(ptdev->phys_dev, PCIR_ASLS_CTL, 4);
 		opregion_start_hpa = opregion_phys & PCIM_ASLS_OPREGION_MASK;
@@ -592,6 +594,7 @@ passthru_deinit(struct vmctx *ctx, struct pci_vdev *dev, char *opts)
 	if (ptdev->phys_bdf == PCI_BDF_GPU) {
 		vm_unmap_ptdev_mmio(ctx, 0, 2, 0, GPU_GSM_GPA, GPU_GSM_SIZE, gsm_start_hpa);
 		vm_unmap_ptdev_mmio(ctx, 0, 2, 0, GPU_OPREGION_GPA, GPU_OPREGION_SIZE, opregion_start_hpa);
+		vm_unmap_ptdev_mmio(ctx, 0, 2, 0, 0x8d000000, 0x800000, 0x8d000000);
 	}
 
 	pcidev.virt_bdf = PCI_BDF(dev->bus, dev->slot, dev->func);

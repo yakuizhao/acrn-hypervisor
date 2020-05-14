@@ -360,7 +360,7 @@ vm_parse_memsize(const char *optarg, size_t *ret_memsize)
 uint32_t
 vm_get_lowmem_limit(struct vmctx *ctx)
 {
-	return ctx->lowmem_limit;
+	return ctx->lowmem_limit + 0x10000000;
 }
 
 int

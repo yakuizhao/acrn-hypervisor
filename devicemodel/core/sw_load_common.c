@@ -90,7 +90,7 @@ const struct e820_entry e820_default_entries[NUM_E820_ENTRIES] = {
 	{
 		/* reserve for PRM resource */
 		.baseaddr = 0x80000000,
-		.length	  = 0x8000000,
+		.length	  = 0x10000000,
 		.type     = E820_TYPE_RESERVED
 	},
 

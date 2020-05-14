@@ -1507,8 +1507,8 @@ init_pci(struct vmctx *ctx)
 	bzero(&mr, sizeof(struct mem_range));
 	mr.name = "PCI hole (32-bit)";
 	mr.flags = MEM_F_RW;
-	mr.base = lowmem;
-	mr.size = (4ULL * 1024 * 1024 * 1024) - lowmem;
+	mr.base = lowmem + 0x10000000;
+	mr.size = (4ULL * 1024 * 1024 * 1024) - lowmem - 0x10000000;
 	mr.handler = pci_emul_fallback_handler;
 	error = register_mem_fallback(&mr);
 	if (error != 0)
@@ -1587,8 +1587,8 @@ deinit_pci(struct vmctx *ctx)
 	lowmem = vm_get_lowmem_size(ctx);
 	bzero(&mr, sizeof(struct mem_range));
 	mr.name = "PCI hole (32-bit)";
-	mr.base = lowmem;
-	mr.size = (4ULL * 1024 * 1024 * 1024) - lowmem;
+	mr.base = lowmem + 0x100000000;
+	mr.size = (4ULL * 1024 * 1024 * 1024) - (lowmem + 0x10000000);
 	unregister_mem_fallback(&mr);
 
 	/* ditto for the 64-bit PCI host aperture */
